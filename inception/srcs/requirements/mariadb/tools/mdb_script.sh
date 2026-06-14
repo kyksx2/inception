@@ -3,33 +3,42 @@ set -e
 
 echo "=== Debut de l'initialisation de MariaDB ==="
 
-if [ ! -f "/var/lib/mysql/ibdata1" ]; then
-    echo "Premiere initialisation de MariaDB..."
-    
-    mysql_install_db --user=mysql --datadir=/var/lib/mysql
+ROOT_MYSQL_ARGS="-uroot"
+
+if [ ! -d "/var/lib/mysql/mysql" ]; then
+	echo "Premiere initialisation de MariaDB..."
+
+	if command -v mariadb-install-db >/dev/null 2>&1; then
+		mariadb-install-db --user=mysql --datadir=/var/lib/mysql --skip-test-db
+	else
+		mysql_install_db --user=mysql --datadir=/var/lib/mysql --skip-test-db
+	fi
+else
+	ROOT_MYSQL_ARGS="-uroot -p${SQL_ROOT_PASSWORD}"
 fi
 
-mysqld --user=mysql --datadir=/var/lib/mysql & #--skip-networking --skip-grant-tables &
+echo "Demarrage temporaire de MariaDB..."
+mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking --socket=/run/mysqld/mysqld.sock &
 MYSQL_PID=$!
 
-sleep 3
-# for i in {1..30}; do
-#     if mysqladmin ping --silent 2>/dev/null; then
-#         echo "MariaDB est pret !"
-#         break
-#     fi
-#     echo "Tentative $i/30..."
-#     sleep 1
-# done
+for i in {1..30}; do
+	if mysqladmin --socket=/run/mysqld/mysqld.sock ping --silent >/dev/null 2>&1; then
+		echo "MariaDB est pret !"
+		break
+	fi
+	echo "Tentative $i/30..."
+	sleep 1
+done
 
-# if ! mysqladmin ping --silent 2>/dev/null; then
-#     echo "ERREUR : MariaDB n'a pas demarrage correctement"
-#     exit 1
-# fi
+if ! mysqladmin --socket=/run/mysqld/mysqld.sock ping --silent >/dev/null 2>&1; then
+	echo "ERREUR : MariaDB n'a pas demarre correctement"
+	kill "$MYSQL_PID" 2>/dev/null || true
+	exit 1
+fi
 
 echo "Configuration de la base de donnees..."
 
-mysql -u root -p${SQL_ROOT_PASSWORD} <<EOF
+mysql --protocol=socket ${ROOT_MYSQL_ARGS} <<EOF
 
 CREATE DATABASE IF NOT EXISTS \`${SQL_DATABASE}\`;
 CREATE USER IF NOT EXISTS '${SQL_USER}'@'%' IDENTIFIED BY '${SQL_PASSWORD}';
@@ -41,8 +50,8 @@ FLUSH PRIVILEGES;
 EOF
 
 echo "Arret de l'instance temporaire..."
-kill $MYSQL_PID
-wait $MYSQL_PID 2>/dev/null || true
+kill "$MYSQL_PID"
+wait "$MYSQL_PID" 2>/dev/null || true
 
 sleep 1
 

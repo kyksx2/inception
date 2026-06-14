@@ -1,23 +1,9 @@
 #!/bin/bash
 set -e
 
-sleep 10
+# sleep 10
 
 echo "=== Debut de l'initialisation de WordPress ==="
-
-# for i in {1..30}; do
-#     if mysql -h mariadb -u "${SQL_USER}" -p"${SQL_PASSWORD}" -e "SELECT 1;" &>/dev/null; then
-#         echo "MariaDB est pret !"
-#         break
-#     fi
-#     echo "Tentative $i/30..."
-#     sleep 1
-# done
-
-# if ! mysql -h mariadb -u "${SQL_USER}" -p"${SQL_PASSWORD}" -e "SELECT 1;" &>/dev/null; then
-#     echo "ERREUR : Impossible de se connecter a MariaDB"
-#     exit 1
-# fi
 
 cd /var/www/wordpress
 
