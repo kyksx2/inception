@@ -23,6 +23,7 @@ RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.ph
 COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
 
 COPY tools/wp_script.sh /usr/local/bin/wp_script.sh
+
 RUN chmod +x /usr/local/bin/wp_script.sh
 
 RUN mkdir -p /run/php && \
@@ -30,5 +31,7 @@ RUN mkdir -p /run/php && \
 
 RUN chown -R www-data:www-data /var/www/wordpress && \
     chmod -R 755 /var/www/wordpress
+
+EXPOSE 9000
 
 CMD ["/usr/local/bin/wp_script.sh"]
